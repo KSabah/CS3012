@@ -1,0 +1,6 @@
+[package]
+name = "dev_task_1"
+version = "0.1.0"
+authors = ["KSabah <khans3@tcd.ie>"]
+
+[dependencies]
