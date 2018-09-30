@@ -5,7 +5,7 @@ pub struct Tree{
 
 #[derive(Debug)]
 pub struct Node{
-    pub value: u8,
+    pub value: i32,
     pub left: Option<Box<Node>>,
     pub right: Option<Box<Node>>,
 }
@@ -32,13 +32,13 @@ impl Tree{
         }
     }
 
-    fn insert(&mut self, value: u8) {
+    fn insert(&mut self, value: i32) {
         insert_at!(self.root, value);
     }
 }
 
 impl Node{
-    fn new(value: u8) -> Self {
+    fn new(value: i32) -> Self {
         Node {
             value: value,
             left: None,
@@ -46,7 +46,7 @@ impl Node{
         }
     }
 
-    fn insert(&mut self, value: u8) {
+    fn insert(&mut self, value: i32) {
         if value <= self.value {
             insert_at!(self.left, value);
         } else {
@@ -55,20 +55,41 @@ impl Node{
     }
 }
 
-fn find_path (root: Node, path: &mut Vec<u8>, value: u8) -> bool{
-    let mut path = Vec::new();
+fn find_path (root: &Node, path: &mut Vec<i32>, value: i32) -> bool{
     if root.value == 0 {return false;}
 
     path.push(root.value);
 
     if root.value == value {return true;}
 
-    if (root.left.is_some() && find_path(*root.left.unwrap(), &mut path, value)) ||
-    (root.right.is_some() && find_path(*root.right.unwrap(), &mut path, value)){
+    if root.left.is_some() && root.right.is_some(){
+        let left = *root.left.unwrap();
+        let right = *root.right.unwrap();
+
+    if (root.left.is_some() && find_path(&left, path, value)) ||
+    (root.right.is_some() && find_path(&right, path, value)){
          return true;}
 
     path.pop();
     return false;
+    }
+    return false;
+}
+
+fn find_lca(root: Node, n1: Node, n2: Node) -> i32{
+    let mut path1 = Vec::new();
+    let mut path2 = Vec::new();
+
+    if !find_path(&root, &mut path1, n1.value) || !find_path(&root, &mut path2, n2.value){
+        return -1;}
+
+    let mut i = 0;
+    while i < path1.len() && i < path2.len(){
+        if path1[i] != path2[i] {break;}
+        i += 1;
+    return path1[i-1];
+    }
+    return -1;
 }
 
 fn main() {
