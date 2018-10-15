@@ -4,3 +4,5 @@ version = "0.1.0"
 authors = ["KSabah <khans3@tcd.ie>"]
 
 [dependencies]
+pathfinding = "0.8.2"
+petgraph = "0.4.13"

@@ -1,175 +1,67 @@
-#[derive(Debug)]
-pub struct Tree {
-    pub root: Option<Box<Node>>,
-}
+extern crate pathfinding;
+extern crate petgraph;
 
-#[derive(Debug, Clone)]
-pub struct Node {
-    pub value: i32,
-    pub left: Option<Box<Node>>,
-    pub right: Option<Box<Node>>,
-}
+use self::pathfinding::prelude::astar;
+use self::petgraph::graph::NodeIndex;
+use self::petgraph::Graph;
+use std::collections::LinkedList;
 
-macro_rules! insert_at {
-    ($node:expr, $value:expr) => {{
-        (move || {
-            if let Some(ref mut node) = $node.as_mut() {
-                node.insert($value);
-                return;
-            }
-
-            $node = Some(Box::new(Node::new($value)));
-        })()
-    }};
-}
-
-impl Tree {
-    fn new() -> Self {
-        Tree { root: None }
+/// Returns list of neighbors of a node with the corresponding cost.
+fn neighbors<N, E>(graph: &Graph<N, E>, n: NodeIndex) -> LinkedList<(NodeIndex, u32)> {
+    let mut list: LinkedList<(NodeIndex, u32)> = LinkedList::new();
+    let mut neighbors = graph.neighbors(n).collect::<LinkedList<NodeIndex>>();
+    for element in neighbors.iter_mut() {
+        list.push_back((*element, 1));
     }
-
-    fn insert(&mut self, node: Node) {
-        insert_at!(self.root, node.value);
-    }
+    return list;
 }
 
-impl Node {
-    fn new(value: i32) -> Self {
-        Node {
-            value: value,
-            left: None,
-            right: None,
+/// A lowest common ancestor function for binary trees.
+///
+/// This function calculates the lowest common ancestor of two nodes in a graph that is structured as a binary tree.
+///
+/// * `graph` - Graph that the lowest common ancestor is applied on.
+/// * `root`  - The root node of the binary tree.
+/// * `node1` - The first node to calculate lca.
+/// * `node2` - The second node to calculate lca.
+pub fn lca_btree<N, E>(
+    graph: &Graph<N, E>,
+    root: NodeIndex,
+    node1: NodeIndex,
+    node2: NodeIndex,
+) -> Option<NodeIndex> {
+    let path1 = astar(&root, |n| neighbors(&graph, *n), |_| 0, |n| *n == node1);
+    let path2 = astar(&root, |n| neighbors(&graph, *n), |_| 0, |n| *n == node2);
+
+    if node1 != node2 {
+        let reverse1 = astar(&node1, |n| neighbors(&graph, *n), |_| 0, |n| *n == root);
+        let reverse2 = astar(&node2, |n| neighbors(&graph, *n), |_| 0, |n| *n == root);
+
+        if reverse1.is_some() || reverse2.is_some() {
+            return None;
         }
     }
 
-    fn insert(&mut self, value: i32) {
-        if value <= self.value {
-            insert_at!(self.left, value);
+    if path1.is_some() && path2.is_some() {
+        let path1arr = path1.unwrap().0;
+        let path2arr = path2.unwrap().0;
+
+        let len;
+        if path1arr.len() < path2arr.len() {
+            len = path1arr.len();
         } else {
-            insert_at!(self.right, value);
+            len = path2arr.len();
         }
-    }
-}
 
-fn find_path(root: Node, path: &mut Vec<i32>, value: i32) -> bool {
-    if root.value == 0 {
-        return false;
-    }
-
-    path.push(root.value);
-
-    if root.value == value {
-        return true;
-    }
-
-    if (root.left.is_some() && find_path(*root.left.unwrap(), path, value))
-        || (root.right.is_some() && find_path(*root.right.unwrap(), path, value))
-    {
-        return true;
-    }
-
-    path.pop();
-
-    return false;
-}
-
-fn find_lca(root: Node, n1: Node, n2: Node) -> i32 {
-    let mut path1 = Vec::new();
-    let mut path2 = Vec::new();
-
-    let root1 = root.clone();
-    let root2 = root.clone();
-    if !find_path(root1, &mut path1, n1.value) || !find_path(root2, &mut path2, n2.value) {
-        return -1;
-    }
-
-    let mut i = 0;
-    while i < path1.len() && i < path2.len() {
-        if path1[i] != path2[i] {
-            break;
+        let mut lca_btree = root;
+        for i in 0..len {
+            if path1arr[i] == path2arr[i] {
+                lca_btree = path1arr[i]
+            } else {
+                break;
+            }
         }
-        i += 1;
-        return path1[i - 1];
+        return Some(lca_btree);
     }
-    return -1;
-}
-
-fn main() {
-}
-
-#[cfg(test)]
-mod tests
-{   // Importing functions names from outer (for mod tests) scope
-    use super::*;
-    //Test some arbitrary values in an empty tree
-    #[test]
-    fn test_empty_tree()
-    {
-        let tree = Tree::new();
-        let node1 = Node::new(1);
-        let node2 = Node::new(2);
-        let node3 = Node::new(3);
-        assert_eq!(find_lca(node1, node2, node3), -1);
-    }
-    //Test for the root node ancestor
-    #[test]
-    fn test_ancestor()
-    {
-        let mut tree = Tree::new();
-        let node1 = Node::new(1);
-        let node1c = node1.clone();
-        let node2 = Node::new(2);
-        let node2c = node2.clone();
-        let node3 = Node::new(3);
-        let node3c = node3.clone();
-        tree.insert(node1);
-        tree.insert(node2);
-        tree.insert(node3);
-        assert_eq!(find_lca(node2c, node1c, node3c), 1);
-    }
-    //Test to make sure the algorithm works
-    #[test]
-    fn test_regular()
-    {
-        let mut tree = Tree::new();
-        let node1 = Node::new(1);
-        let node1c = node1.clone();
-        let node2 = Node::new(2);
-        let node2c = node2.clone();
-        let node3 = Node::new(3);
-        let node3c = node3.clone();
-        let node4 = Node::new(4);
-        let node4c = node4.clone();
-        let node5 = Node::new(5);
-        let node5c = node5.clone();
-        let node6 = Node::new(6);
-        let node6c = node6.clone();
-        tree.insert(node3);
-        tree.insert(node1);
-        tree.insert(node2);
-        tree.insert(node4);
-        tree.insert(node5);
-        tree.insert(node6);
-        //testing the right side
-        assert_eq!(find_lca(node4c, node5c, node6c), 4);
-        //testing left side
-        assert_eq!(find_lca(node3c, node2c, node1c), 3);
-    }
-    //Test what happens when a node that is not in the tree is entered
-    #[test]
-    #[should_panic]
-    fn test_rogue_node()
-    {
-        let mut tree = Tree::new();
-        let node1 = Node::new(1);
-        let node1c = node1.clone();
-        let node2 = Node::new(2);
-        let node2c = node2.clone();
-        let node3 = Node::new(3);
-        let node4 = Node::new(4);
-        tree.insert(node1);
-        tree.insert(node2);
-        tree.insert(node3);
-        assert_eq!(find_lca(node1c, node4, node2c), -1);
-    }
+    return None;
 }
