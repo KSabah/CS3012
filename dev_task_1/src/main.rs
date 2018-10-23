@@ -32,16 +32,6 @@ pub fn lca_btree<N, E>(
 ) -> Option<NodeIndex> {
     let path1 = astar(&root, |n| neighbors(&graph, *n), |_| 0, |n| *n == node1);
     let path2 = astar(&root, |n| neighbors(&graph, *n), |_| 0, |n| *n == node2);
-
-    if node1 != node2 {
-        let reverse1 = astar(&node1, |n| neighbors(&graph, *n), |_| 0, |n| *n == root);
-        let reverse2 = astar(&node2, |n| neighbors(&graph, *n), |_| 0, |n| *n == root);
-
-        if reverse1.is_some() || reverse2.is_some() {
-            return None;
-        }
-    }
-
     if path1.is_some() && path2.is_some() {
         let path1arr = path1.unwrap().0;
         let path2arr = path2.unwrap().0;
@@ -64,4 +54,64 @@ pub fn lca_btree<N, E>(
         return Some(lca_btree);
     }
     return None;
+}
+
+#[cfg(test)]
+mod tests {
+    use super::lca_btree;
+    use super::Graph;
+
+    #[test]
+    fn testlca_btree() {
+        let mut map = Graph::<&str, i32>::new();
+        let root = map.add_node("root");
+        let n1 = map.add_node("1");
+        let n2 = map.add_node("2");
+        let n3 = map.add_node("3");
+        let n4 = map.add_node("4");
+        let n5 = map.add_node("5");
+        let n6 = map.add_node("6");
+        map.extend_with_edges(&[
+            (root, n1),
+            (root, n2),
+            (n1, n3),
+            (n1, n4),
+            (n2, n5),
+            (n2, n6),
+        ]);
+        assert_eq!(true, lca_btree(&map, root, n1, n5).is_some());
+        assert_eq!(root, lca_btree(&map, root, n1, n5).unwrap());
+
+        assert_eq!(true, lca_btree(&map, root, n6, n5).is_some());
+        assert_eq!(n2, lca_btree(&map, root, n6, n5).unwrap());
+
+        assert_eq!(true, lca_btree(&map, root, n3, n4).is_some());
+        assert_eq!(n1, lca_btree(&map, root, n3, n4).unwrap());
+    }
+
+    #[test]
+    fn testlca_notconn() {
+        let mut map = Graph::<&str, i32>::new();
+        let root = map.add_node("root");
+        let n1 = map.add_node("1");
+        let n3 = map.add_node("3");
+        let n4 = map.add_node("4");
+        let n5 = map.add_node("5");
+        let n6 = map.add_node("6");
+
+        assert_eq!(false, lca_btree(&map, root, n1, n5).is_some());
+
+        assert_eq!(false, lca_btree(&map, root, n6, n5).is_some());
+
+        assert_eq!(false, lca_btree(&map, root, n3, n4).is_some());
+    }
+
+    #[test]
+    fn testlca_samenode() {
+        let mut map = Graph::<&str, i32>::new();
+        let root = map.add_node("root");
+
+        assert_eq!(true, lca_btree(&map, root, root, root).is_some());
+        assert_eq!(root, lca_btree(&map, root, root, root).unwrap());
+    }
 }
