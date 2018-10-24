@@ -24,7 +24,7 @@ fn neighbors<N, E>(graph: &Graph<N, E>, n: NodeIndex) -> LinkedList<(NodeIndex, 
 /// * `root`  - The root node of the binary tree.
 /// * `node1` - The first node to calculate lca.
 /// * `node2` - The second node to calculate lca.
-pub fn lca_btree<N, E>(
+pub fn lca<N, E>(
     graph: &Graph<N, E>,
     root: NodeIndex,
     node1: NodeIndex,
@@ -43,26 +43,27 @@ pub fn lca_btree<N, E>(
             len = path2arr.len();
         }
 
-        let mut lca_btree = root;
+        let mut lca = root;
         for i in 0..len {
             if path1arr[i] == path2arr[i] {
-                lca_btree = path1arr[i]
+                lca = path1arr[i]
             } else {
                 break;
             }
         }
-        return Some(lca_btree);
+        return Some(lca);
     }
     return None;
 }
 
 #[cfg(test)]
 mod tests {
-    use super::lca_btree;
+    use super::lca;
     use super::Graph;
 
+    /// Tests the normal case for lca
     #[test]
-    fn testlca_btree() {
+    fn testlca() {
         let mut map = Graph::<&str, i32>::new();
         let root = map.add_node("root");
         let n1 = map.add_node("1");
@@ -79,39 +80,64 @@ mod tests {
             (n2, n5),
             (n2, n6),
         ]);
-        assert_eq!(true, lca_btree(&map, root, n1, n5).is_some());
-        assert_eq!(root, lca_btree(&map, root, n1, n5).unwrap());
+        assert_eq!(true, lca(&map, root, n1, n5).is_some());
+        assert_eq!(root, lca(&map, root, n1, n5).unwrap());
 
-        assert_eq!(true, lca_btree(&map, root, n6, n5).is_some());
-        assert_eq!(n2, lca_btree(&map, root, n6, n5).unwrap());
+        assert_eq!(true, lca(&map, root, n6, n5).is_some());
+        assert_eq!(n2, lca(&map, root, n6, n5).unwrap());
 
-        assert_eq!(true, lca_btree(&map, root, n3, n4).is_some());
-        assert_eq!(n1, lca_btree(&map, root, n3, n4).unwrap());
+        assert_eq!(true, lca(&map, root, n3, n4).is_some());
+        assert_eq!(n1, lca(&map, root, n3, n4).unwrap());
     }
 
+    /// Test for when nodes are not connected, should return None
     #[test]
-    fn testlca_notconn() {
+    fn testlca_notconnected() {
         let mut map = Graph::<&str, i32>::new();
         let root = map.add_node("root");
         let n1 = map.add_node("1");
+        let n2 = map.add_node("2");
         let n3 = map.add_node("3");
         let n4 = map.add_node("4");
         let n5 = map.add_node("5");
         let n6 = map.add_node("6");
 
-        assert_eq!(false, lca_btree(&map, root, n1, n5).is_some());
-
-        assert_eq!(false, lca_btree(&map, root, n6, n5).is_some());
-
-        assert_eq!(false, lca_btree(&map, root, n3, n4).is_some());
+        assert_eq!(false, lca(&map, root, n1, n2).is_some());
+        assert_eq!(false, lca(&map, root, n3, n4).is_some());
+        assert_eq!(false, lca(&map, root, n5, n6).is_some());
     }
 
+    /// Tests that the same node is returned when the two nodes entered are the same
     #[test]
     fn testlca_samenode() {
         let mut map = Graph::<&str, i32>::new();
         let root = map.add_node("root");
 
-        assert_eq!(true, lca_btree(&map, root, root, root).is_some());
-        assert_eq!(root, lca_btree(&map, root, root, root).unwrap());
+        assert_eq!(true, lca(&map, root, root, root).is_some());
+        assert_eq!(root, lca(&map, root, root, root).unwrap());
     }
+
+    /// Tests for a cycle in the graph, should return None
+   #[test]
+   fn testlca_structure() {
+       let mut map = Graph::<&str, i32>::new();
+       let root = map.add_node("root");
+       let n1 = map.add_node("1");
+       let n2 = map.add_node("2");
+       let n3 = map.add_node("3");
+       let n4 = map.add_node("4");
+       let n5 = map.add_node("5");
+       let n6 = map.add_node("6");
+       map.extend_with_edges(&[
+           (n4,root),
+           (n5,root),
+           (root, n1),
+           (root, n2),
+           (n1, n3),
+           (n1, n4),
+           (n2, n5),
+           (n2, n6),
+       ]);
+       assert_eq!(false, lca(&map, root, n1, n5).is_some());
+   }
 }
