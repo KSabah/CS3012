@@ -138,4 +138,34 @@ mod tests {
        ]);
        assert_eq!(false, lca(&map, n1, n5).is_some());
    }
+   ///Tests for seperate connected graphs
+   #[test]
+  fn testlca_separategraph() {
+      let mut map = Graph::<&str, i32>::new();
+      let n1 = map.add_node("1");
+      let n2 = map.add_node("2");
+      let n3 = map.add_node("3");
+      let n4 = map.add_node("4");
+      let n5 = map.add_node("5");
+      let n6 = map.add_node("6");
+      let n7 = map.add_node("7");
+      let n8 = map.add_node("8");
+
+      map.extend_with_edges(&[
+          (n1,n2),
+          (n2,n3),
+          (n2,n4),
+          (n5,n6),
+          (n5,n7),
+          (n6,n8)
+      ]);
+
+      assert_eq!(true, lca(&map, n2, n4).is_some());
+      assert_eq!(n2, lca(&map, n2, n4).unwrap());
+
+      assert_eq!(true, lca(&map, n7, n8).is_some());
+      assert_eq!(n5, lca(&map, n7, n8).unwrap());
+
+      assert_eq!(false, lca(&map, n4, n6).is_some());
+  }
 }
