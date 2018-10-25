@@ -138,7 +138,7 @@ mod tests {
        ]);
        assert_eq!(false, lca(&map, n1, n5).is_some());
    }
-   ///Tests for seperate connected graphs
+   ///Tests for separate connected graphs, should return None when nodes are not connected
    #[test]
   fn testlca_separategraph() {
       let mut map = Graph::<&str, i32>::new();
@@ -155,6 +155,7 @@ mod tests {
           (n1,n2),
           (n2,n3),
           (n2,n4),
+
           (n5,n6),
           (n5,n7),
           (n6,n8)
